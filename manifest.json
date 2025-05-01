@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "My Custom New Tab (React)",
+  "name": "TagsNTabs",
   "version": "1.0",
   "description": "Shows bookmarks and tab groups in React",
   "permissions": ["bookmarks", "tabs", "tabGroups"],
