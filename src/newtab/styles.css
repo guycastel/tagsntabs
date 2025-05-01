@@ -1,0 +1,40 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f0f0f0;
+}
+
+#container {
+  display: flex;
+  height: 100vh;
+}
+
+#left, #right {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+.collapsible-header {
+  background: #ddd;
+  padding: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
+.collapsible-content {
+  padding-left: 16px;
+}
+
+.bookmark a, .tab a {
+  text-decoration: none;
+  color: #0077cc;
+  display: block;
+  margin: 2px 0;
+}
