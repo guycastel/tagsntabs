@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "TagsNTabs",
+  "version": "1.0",
+  "description": "Shows bookmarks and tab groups",
+  "permissions": ["bookmarks", "tabs", "tabGroups"],
+  "action": {
+    "default_title": "TagsNTabs"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "host_permissions": ["<all_urls>"]
+}

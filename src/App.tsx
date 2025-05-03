@@ -84,7 +84,7 @@ const useTabGroups = () => {
 
     const getGroupInfo = async (groupId: number, tabs: ChromeTab[]) => {
       return new Promise<TabGroup>((resolve) =>
-        chrome.tabGroups.get(groupId, (group) => resolve({ ...group, tabs }))
+        chrome.tabGroups.get(groupId, (group) => resolve({ ...group, tabs })),
       )
     }
 
@@ -107,7 +107,7 @@ const useTabGroups = () => {
         }, {})
 
         const groupPromises = Object.entries(groupsMap).map(([groupId, tabs]) =>
-          getGroupInfo(parseInt(groupId), tabs)
+          getGroupInfo(parseInt(groupId), tabs),
         )
 
         const resolvedGroups = await Promise.all(groupPromises)

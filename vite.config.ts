@@ -1,22 +1,41 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { fileURLToPath } from 'node:url'
-import { dirname, resolve } from 'node:path'
+import { dirname, resolve } from 'path'
+import { fileURLToPath } from 'url'
+// import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Granular control over copying static resources
+    // viteStaticCopy({
+    //   targets: [
+    //     {
+    //       src: 'public/manifest.json',
+    //       dest: '.',
+    //     },
+    //     {
+    //       src: 'public/*.png',
+    //       dest: '.',
+    //     },
+    //   ],
+    // }),
+  ],
   build: {
+    outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: {
-        newtab: resolve(__dirname, 'newtab.html'),
-        manifest: resolve(__dirname, 'manifest.json')
-      }
+        index: resolve(__dirname, 'index.html'),
+        background: resolve(__dirname, 'src/background.ts'),
+      },
+      output: {
+        entryFileNames: '[name].js',
+        assetFileNames: '[name][extname]',
+      },
     },
-    outDir: 'dist',
-    emptyOutDir: true
   },
-  publicDir: false
 })

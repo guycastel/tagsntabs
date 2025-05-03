@@ -8,9 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext ts,tsx --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\""
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css,json,md}\"",
+    "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,json,md}\""
   },
   "keywords": [],
   "author": "",
@@ -32,7 +33,6 @@
     "@vitejs/plugin-react": "^4.4.1",
     "eslint": "^9.25.1",
     "eslint-config-prettier": "^10.1.2",
-    "eslint-plugin-prettier": "^5.2.6",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "prettier": "^3.5.3",
