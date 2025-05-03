@@ -82,9 +82,9 @@ const useTabGroups = () => {
   useEffect(() => {
     let isMounted = true
 
-    const getGroupInfo = async (groupId: number, tabs: ChromeTab[]) => {
+    const getGroupInfo = async (groupId: number, groupTabs: ChromeTab[]) => {
       return new Promise<TabGroup>((resolve) =>
-        chrome.tabGroups.get(groupId, (group) => resolve({ ...group, tabs })),
+        chrome.tabGroups.get(groupId, (group) => resolve({ ...group, tabs: groupTabs })),
       )
     }
 
@@ -106,8 +106,8 @@ const useTabGroups = () => {
           return acc
         }, {})
 
-        const groupPromises = Object.entries(groupsMap).map(([groupId, tabs]) =>
-          getGroupInfo(parseInt(groupId), tabs),
+        const groupPromises = Object.entries(groupsMap).map(([groupId, groupTabs]) =>
+          getGroupInfo(parseInt(groupId), groupTabs),
         )
 
         const resolvedGroups = await Promise.all(groupPromises)
