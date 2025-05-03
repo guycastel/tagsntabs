@@ -1,4 +1,20 @@
 import React, { useEffect, useState } from 'react'
+import {
+  Button,
+  Card,
+  Classes,
+  Collapse,
+  Divider,
+  H2,
+  Icon,
+  Intent,
+  Spinner,
+  Switch,
+  Tag
+} from '@blueprintjs/core'
+import { IconNames } from '@blueprintjs/icons'
+import '@blueprintjs/core/lib/css/blueprint.css'
+import '@blueprintjs/icons/lib/css/blueprint-icons.css'
 
 interface BookmarkNode {
   id: string
@@ -22,30 +38,28 @@ interface ChromeTab extends chrome.tabs.Tab {
 }
 
 interface CollapsibleProps {
-  readonly title: string
+  readonly title: React.ReactNode
   readonly children: React.ReactNode
 }
 
 function Collapsible({ title, children }: Readonly<CollapsibleProps>) {
   const [open, setOpen] = useState(false)
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      setOpen(!open)
-    }
-  }
-
   return (
-    <div className="collapsible">
-      <button
-        className="collapsible-header"
+    <div className="bp4-collapsible">
+      <Button
+        fill
+        alignText="left"
+        intent={Intent.NONE}
+        icon={open ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_RIGHT}
         onClick={() => setOpen(!open)}
-        onKeyDown={handleKey}
         aria-expanded={open}
       >
         {title}
-      </button>
-      {open && <div className="collapsible-content">{children}</div>}
+      </Button>
+      <Collapse isOpen={open}>
+        <div className="bp4-collapsible-content">{children}</div>
+      </Collapse>
     </div>
   )
 }
@@ -74,6 +88,15 @@ const useBookmarks = () => {
   return { bookmarks, isLoading, error }
 }
 
+// Helper function moved outside of the hook to reduce nesting
+const getGroupInfo = async (groupId: number, groupTabs: ChromeTab[]): Promise<TabGroup> => {
+  return new Promise<TabGroup>((resolve) => {
+    chrome.tabGroups.get(groupId, (group) => {
+      resolve({ ...group, tabs: groupTabs })
+    })
+  })
+}
+
 const useTabGroups = () => {
   const [tabGroups, setTabGroups] = useState<TabGroup[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -82,15 +105,14 @@ const useTabGroups = () => {
   useEffect(() => {
     let isMounted = true
 
-    const getGroupInfo = async (groupId: number, groupTabs: ChromeTab[]) => {
-      return new Promise<TabGroup>((resolve) =>
-        chrome.tabGroups.get(groupId, (group) => resolve({ ...group, tabs: groupTabs })),
-      )
-    }
-
     const fetchTabGroups = async () => {
       try {
-        const tabs = await chrome.tabs.query({})
+        // Get all tabs
+        const tabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+          chrome.tabs.query({}, resolve)
+        })
+
+        // Group tabs by their group ID
         const groupsMap = tabs.reduce<Record<number, ChromeTab[]>>((acc, tab) => {
           if (tab.groupId !== -1 && tab.id !== undefined && tab.title && tab.url) {
             const chromeTab: ChromeTab = {
@@ -106,11 +128,14 @@ const useTabGroups = () => {
           return acc
         }, {})
 
+        // Create an array of promises for getting group info
         const groupPromises = Object.entries(groupsMap).map(([groupId, groupTabs]) =>
-          getGroupInfo(parseInt(groupId), groupTabs),
+          getGroupInfo(parseInt(groupId), groupTabs)
         )
 
+        // Resolve all promises
         const resolvedGroups = await Promise.all(groupPromises)
+
         if (isMounted) {
           setTabGroups(resolvedGroups)
           setIsLoading(false)
@@ -124,6 +149,7 @@ const useTabGroups = () => {
     }
 
     fetchTabGroups()
+
     return () => {
       isMounted = false
     }
@@ -148,15 +174,18 @@ const BookmarksList = ({ bookmarks }: Readonly<BookmarksListProps>) => {
       }
       return (
         <div className="bookmark" key={node.id}>
-          <a href={node.url} target="_blank" rel="noreferrer">
-            {node.title ?? node.url}
-          </a>
+          <Button
+            intent={Intent.NONE}
+            icon={IconNames.DOCUMENT}
+            text={node.title ?? node.url}
+            onClick={() => window.open(node.url, '_blank')}
+          />
         </div>
       )
     })
   }
 
-  return renderBookmarks(bookmarks)
+  return <div className="bookmarks-list">{renderBookmarks(bookmarks)}</div>
 }
 
 interface TabGroupsListProps {
@@ -169,44 +198,93 @@ const TabGroupsList = ({ tabGroups }: Readonly<TabGroupsListProps>) => {
     chrome.tabs.update(tabId, { active: true })
   }
 
-  return tabGroups.map((group) => (
-    <Collapsible key={group.id} title={`Group: ${group.title ?? '(no title)'} - ${group.color}`}>
-      {group.tabs.map((tab) => (
-        <div className="tab" key={tab.id}>
-          <button className="tab-button" onClick={(e) => handleTabClick(e, tab.id)}>
-            {tab.title}
-          </button>
-        </div>
+  return (
+    <div className="tab-groups-list">
+      {tabGroups.map((group) => (
+        <Card key={group.id} className="bp4-tab-group-card" elevation={1} style={{ marginBottom: '10px' }}>
+          <Collapsible title={
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <Tag intent={getIntentForColor(group.color)} style={{ marginRight: '8px' }} />
+              <span>{group.title ?? '(no title)'}</span>
+            </div>
+          }>
+            {group.tabs.map((tab) => (
+              <div className="tab" key={tab.id}>
+                <Button
+                  intent={Intent.NONE}
+                  icon={IconNames.APPLICATION}
+                  text={tab.title}
+                  onClick={(e) => handleTabClick(e, tab.id)}
+                />
+              </div>
+            ))}
+          </Collapsible>
+        </Card>
       ))}
-    </Collapsible>
-  ))
+    </div>
+  )
+}
+
+// Helper function to convert Blueprint color to intent
+const getIntentForColor = (color: string): Intent => {
+  switch (color) {
+    case 'red': return Intent.DANGER
+    case 'green': return Intent.SUCCESS
+    case 'blue': return Intent.PRIMARY
+    case 'yellow': return Intent.WARNING
+    default: return Intent.NONE
+  }
 }
 
 function App() {
   const { bookmarks, isLoading: bookmarksLoading, error: bookmarksError } = useBookmarks()
   const { tabGroups, isLoading: tabGroupsLoading, error: tabGroupsError } = useTabGroups()
+  const [isDarkTheme, setIsDarkTheme] = useState(false)
+
+  // Apply theme class to body
+  useEffect(() => {
+    document.body.className = isDarkTheme ? Classes.DARK : ''
+  }, [isDarkTheme])
 
   if (bookmarksError || tabGroupsError) {
-    return <div className="error">Error loading data</div>
+    return (
+      <div className={`app-container ${isDarkTheme ? Classes.DARK : ''}`}>
+        <Card elevation={2} className="error-card">
+          <Icon icon={IconNames.ERROR} intent={Intent.DANGER} size={20} />
+          <span style={{ marginLeft: '8px' }}>Error loading data</span>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div id="container">
-      <div id="left">
-        <h2>Bookmarks</h2>
-        {bookmarksLoading ? (
-          <div>Loading bookmarks...</div>
-        ) : (
-          <BookmarksList bookmarks={bookmarks} />
-        )}
+    <div className={`app-container ${isDarkTheme ? Classes.DARK : ''}`}>
+      <div className="theme-toggle">
+        <Switch
+          checked={isDarkTheme}
+          onChange={() => setIsDarkTheme(!isDarkTheme)}
+          label={isDarkTheme ? "Dark Theme" : "Light Theme"}
+        />
       </div>
-      <div id="right">
-        <h2>Tab Groups</h2>
-        {tabGroupsLoading ? (
-          <div>Loading tab groups...</div>
-        ) : (
-          <TabGroupsList tabGroups={tabGroups} />
-        )}
+      <div id="container" className={Classes.CARD}>
+        <div id="left">
+          <H2>Bookmarks</H2>
+          <Divider />
+          {bookmarksLoading ? (
+            <Spinner size={30} />
+          ) : (
+            <BookmarksList bookmarks={bookmarks} />
+          )}
+        </div>
+        <div id="right">
+          <H2>Tab Groups</H2>
+          <Divider />
+          {tabGroupsLoading ? (
+            <Spinner size={30} />
+          ) : (
+            <TabGroupsList tabGroups={tabGroups} />
+          )}
+        </div>
       </div>
     </div>
   )
